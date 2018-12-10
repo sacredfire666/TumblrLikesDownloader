@@ -1,9 +1,11 @@
 import pytumblr
 import os
-import urllib
+import urllib.request
+import urllib.error
 import re
 from tumblr_keys import *
 import codecs
+import json
 
 client = pytumblr.TumblrRestClient(
     consumer_key,
@@ -36,7 +38,8 @@ posts = 0
 
 # Likes required offset, i.e. start from which like. If too many likes need to be download, 
 # we should run this script for several times and change offset. 
-offset = 0
+offset = 500
+maxPages = 100
 
 # Number of requires
 pages = 0
@@ -55,6 +58,13 @@ def CheckDownloadLimitation():
 		return False
 	else:
 		return True
+
+def auto_down(url,filename):
+    try:
+        urllib.request.urlretrieve(url,filename)
+    except urllib.error.ContentTooShortError:
+        print('Network conditions is not good. Reloading.')
+        auto_down(url,filename)
 
 def download_photo(liked):
     global downloadFlag
@@ -77,7 +87,7 @@ def download_photo(liked):
         else:
             if CheckDownloadLimitation():
                 print("Downloading " + imgname + " from " + liked["blog_name"])
-                urllib.request.urlretrieve(url, filename)
+                auto_down(url, filename)
                 count += 1
             else:
                 downloadFlag = False
@@ -93,9 +103,14 @@ def download_video(liked):
         print("File already exists : " + vidname)
     else:
         if CheckDownloadLimitation():
-            print("Downloading " + vidname + " from " + liked["blog_name"])
-            urllib.request.urlretrieve(url, filename)
-            count += 1
+            print("Downloading " + vidname + " from " + liked["blog_name"] + ":")
+            print(url)
+            try:
+                auto_down(url, filename)
+            except urllib.error.HTTPError as e:
+                print(e.code, e.reason)
+            else:
+                count += 1
         else:
             downloadFlag = False
  
@@ -125,19 +140,19 @@ def download_other(liked):
         else:
             if CheckDownloadLimitation():
                 print("Downloading " + imgname + " from " + liked["blog_name"])
-                urllib.request.urlretrieve(imgItem, filename)
+                auto_down(imgItem, filename)
                 count += 1
             else:
                 downloadFlag = False
                 break
 
-maxPages = 100
+  
 
 while(True):
     likes = client.likes(offset=offset, limit=limit)["liked_posts"]
     if len(likes)==0 :
         break
-    if pages>maxPages:
+    if pages>=maxPages:
         print("Reach the max page.")
         break
     offset = offset+len(likes)
@@ -160,7 +175,7 @@ while(True):
             download_other(liked)
         else:
             # If not a photo or a video, dump the JSON
-            with open(str(liked["id"]) + "-" + str(liked["blog_name"]) + ".json", "w") as f:
+            with open(dirname+"/"+str(liked["id"]) + "-" + str(liked["blog_name"]) + ".json", "w") as f:
                 json.dump(liked, f)
         print("Downloaded {0} items totally till this post.".format(count)) 
 
