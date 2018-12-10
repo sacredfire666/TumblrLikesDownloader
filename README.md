@@ -1,5 +1,5 @@
 # TumblrLikesDownloader
-This python script downloads all the photos and videos liked of your tumblr account. I refer to https://github.com/KellyReddington/TumblrLikesDownloader and https://gist.github.com/jeffaudi/89bba20e839d99e4afab .
+This python script downloads all the photos and videos liked of your tumblr account. I refer to https://github.com/KellyReddington/TumblrLikesDownloader and https://gist.github.com/jeffaudi/89bba20e839d99e4afab . Fix some bugs. The script is suitable for Python 3.x.
 
 Steps:
 
